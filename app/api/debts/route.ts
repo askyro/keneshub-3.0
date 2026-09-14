@@ -18,7 +18,7 @@ export async function GET() {
 
     return NextResponse.json({
       user: publicBorrower,
-      debts: []
+      debts: userDebts
     });
   } catch (error) {
     console.error('API Error:', error);
