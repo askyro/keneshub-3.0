@@ -1,11 +1,15 @@
 import { sqliteTable, text, integer, real } from 'drizzle-orm/sqlite-core';
 import { v4 as uuidv4 } from 'uuid';
 
+export const USER_ROLES = ['borrower', 'creditor', 'collector', 'lawyer', 'ombudsman'] as const;
+export type UserRole = (typeof USER_ROLES)[number];
+
 export const users = sqliteTable('users', {
   id: text('id').primaryKey().$defaultFn(() => uuidv4()),
   name: text('name').notNull(),
   email: text('email').notNull().unique(),
-  role: text('role', { enum: ['borrower', 'creditor', 'collector', 'lawyer', 'ombudsman'] }).notNull(),
+  passwordHash: text('password_hash').notNull(),
+  role: text('role', { enum: USER_ROLES }).notNull(),
   createdAt: integer('created_at', { mode: 'timestamp' }).$defaultFn(() => new Date()),
 });
 

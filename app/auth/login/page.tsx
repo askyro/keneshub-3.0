@@ -15,20 +15,54 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const router = useRouter();
 
+  const roleHome: Record<string, string> = {
+    borrower: '/dashboard',
+    creditor: '/creditor',
+    collector: '/collector',
+    lawyer: '/dashboard/legal',
+    ombudsman: '/ombudsman',
+  };
+
+  const roleLabels: Record<string, string> = {
+    borrower: 'Заёмщик',
+    creditor: 'Кредитор',
+    collector: 'Коллектор',
+    lawyer: 'Юрист',
+    ombudsman: 'Омбудсмен',
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('userEmail', email);
-        if (!localStorage.getItem('userName')) {
-           localStorage.setItem('userName', 'Пользователь');
-           localStorage.setItem('userRole', 'Заёмщик');
-        }
+
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Ошибка при входе');
       }
-      router.push('/dashboard');
-    }, 1200);
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('userName', data.user?.name || 'Пользователь');
+        localStorage.setItem('userRole', roleLabels[data.user?.role] || 'Заёмщик');
+        localStorage.setItem('userEmail', data.user?.email || email);
+      }
+
+      router.push(roleHome[data.user?.role] || '/dashboard');
+    } catch (err) {
+      console.error(err);
+      alert(err instanceof Error ? err.message : 'Неверный email или пароль');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
