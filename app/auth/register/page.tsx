@@ -72,6 +72,7 @@ function RegisterForm() {
         body: JSON.stringify({
           name: form.name,
           email: form.email,
+          password: form.password,
           role: selectedRole
         })
       });
@@ -82,11 +83,10 @@ function RegisterForm() {
         throw new Error(data.error || 'Ошибка при регистрации');
       }
 
-      // Сохраняем в стор для UI (как было раньше)
       if (typeof window !== 'undefined') {
-        localStorage.setItem('userName', form.name || 'Пользователь');
+        localStorage.setItem('userName', data.user?.name || form.name);
         localStorage.setItem('userRole', selected?.label || 'Заёмщик');
-        localStorage.setItem('userEmail', form.email || '');
+        localStorage.setItem('userEmail', data.user?.email || form.email);
       }
       
       // Искусственная задержка для плавности анимации

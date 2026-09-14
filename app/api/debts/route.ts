@@ -14,8 +14,10 @@ export async function GET() {
 
     const userDebts = await db.select().from(debts).where(eq(debts.borrowerId, borrower.id)).all();
     
+    const { passwordHash: _passwordHash, ...publicBorrower } = borrower;
+
     return NextResponse.json({
-      user: borrower,
+      user: publicBorrower,
       debts: []
     });
   } catch (error) {
