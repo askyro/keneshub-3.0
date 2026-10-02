@@ -2,9 +2,14 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { users, debts, negotiations } from '@/lib/db/schema';
 import { sql, eq, count, sum } from 'drizzle-orm';
+import { cookies } from 'next/headers';
+import { isAdminSession } from '@/lib/auth/request';
 
 export async function GET() {
   try {
+    if (!isAdminSession((await cookies()).get('admin_session')?.value)) {
+      return NextResponse.json({ error: 'Не авторизован' }, { status: 401 });
+    }
     // Total users by role
     const usersByRole = await db
       .select({ role: users.role, count: count() })

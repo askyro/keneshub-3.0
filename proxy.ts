@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { readSession, SESSION_COOKIE } from '@/lib/auth/session';
+import { isAdminSession } from '@/lib/auth/request';
 
 const userProtectedRoutes = ['/dashboard', '/creditor', '/collector'];
 const authRoutes = ['/auth/login', '/auth/register'];
@@ -36,13 +37,13 @@ export async function proxy(request: NextRequest) {
     const adminSession = request.cookies.get('admin_session');
 
     if (isLoginPage) {
-      if (adminSession?.value === process.env.ADMIN_SESSION_SECRET) {
+      if (isAdminSession(adminSession?.value)) {
         return NextResponse.redirect(new URL('/admin', request.url));
       }
       return NextResponse.next();
     }
 
-    if (!adminSession || adminSession.value !== process.env.ADMIN_SESSION_SECRET) {
+    if (!isAdminSession(adminSession?.value)) {
       return NextResponse.redirect(new URL('/admin/login', request.url));
     }
 
@@ -74,5 +75,5 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/dashboard/:path*', '/creditor/:path*', '/collector/:path*', '/auth/:path*'],
+  matcher: ['/admin/:path*', '/api/admin/:path*', '/dashboard/:path*', '/creditor/:path*', '/collector/:path*', '/auth/:path*'],
 };
