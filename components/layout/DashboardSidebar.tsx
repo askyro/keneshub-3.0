@@ -15,6 +15,14 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n';
 
+const roleLabels: Record<string, string> = {
+  borrower: 'Заёмщик',
+  creditor: 'Кредитор',
+  collector: 'Коллектор',
+  lawyer: 'Юрист',
+  ombudsman: 'Омбудсмен',
+};
+
 const menuItems = [
   { id: 'dashboard', label: 'Центр управления', icon: LayoutDashboard, href: '/dashboard' },
   { id: 'ai', label: 'AI Консультант', icon: Sparkles, href: '/dashboard/ai' },
@@ -33,8 +41,22 @@ export default function DashboardSidebar({ onClose }: { onClose?: () => void }) 
 
   useEffect(() => {
     setMounted(true);
-    setUserName(localStorage.getItem('userName') || '');
-    setUserRole(localStorage.getItem('userRole') || '');
+
+    fetch('/api/auth/me')
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error('Unauthorized');
+        }
+        return res.json();
+      })
+      .then((data) => {
+        setUserName(data.user?.name || '');
+        setUserRole(roleLabels[data.user?.role] || data.user?.role || '');
+      })
+      .catch(() => {
+        setUserName('');
+        setUserRole('');
+      });
   }, []);
 
   const displayInitial = mounted && userName ? userName[0].toUpperCase() : 'П';
@@ -99,10 +121,12 @@ export default function DashboardSidebar({ onClose }: { onClose?: () => void }) 
           </div>
         </div>
         <button 
-          onClick={() => {
+          onClick={async () => {
+            await fetch('/api/auth/logout', { method: 'POST' });
             localStorage.removeItem('userName');
             localStorage.removeItem('userRole');
-            window.location.href = '/';
+            localStorage.removeItem('userEmail');
+            window.location.href = '/auth/login';
           }}
           className="w-full flex items-center gap-3 px-3 py-2 text-zinc-400 hover:text-black transition-colors"
         >

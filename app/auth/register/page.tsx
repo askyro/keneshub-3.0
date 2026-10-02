@@ -83,12 +83,6 @@ function RegisterForm() {
         throw new Error(data.error || 'Ошибка при регистрации');
       }
 
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('userName', data.user?.name || form.name);
-        localStorage.setItem('userRole', selected?.label || 'Заёмщик');
-        localStorage.setItem('userEmail', data.user?.email || form.email);
-      }
-      
       // Искусственная задержка для плавности анимации
       setTimeout(() => {
         setLoading(false);

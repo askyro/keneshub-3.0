@@ -25,18 +25,24 @@ export default function SettingsPage() {
 
   useEffect(() => {
     setMounted(true);
-    setForm(prev => ({
-      ...prev,
-      name: localStorage.getItem('userName') || 'Алибек Нурланов',
-      email: localStorage.getItem('userEmail') || 'alibek@example.kz'
-    }));
+    fetch('/api/auth/me')
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error('Unauthorized');
+        }
+        return res.json();
+      })
+      .then((data) => {
+        setForm(prev => ({
+          ...prev,
+          name: data.user?.name || prev.name,
+          email: data.user?.email || prev.email
+        }));
+      })
+      .catch(console.error);
   }, []);
 
   const handleSave = () => {
-    localStorage.setItem('userName', form.name);
-    localStorage.setItem('userEmail', form.email);
-    window.dispatchEvent(new Event('storage'));
-    
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };

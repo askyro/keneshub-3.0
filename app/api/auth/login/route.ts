@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     }
 
     const response = NextResponse.json({ success: true, user: publicUser(user) });
-    applySessionCookie(response, user.id);
+    await applySessionCookie(response, user.id, user.role);
     return response;
   } catch (error) {
     console.error('Ошибка входа:', error);

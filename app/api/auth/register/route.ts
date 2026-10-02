@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     }).get();
 
     const response = NextResponse.json({ success: true, user: publicUser(newUser) });
-    applySessionCookie(response, newUser.id);
+    await applySessionCookie(response, newUser.id, newUser.role);
     return response;
   } catch (error) {
     console.error('Ошибка регистрации:', error);

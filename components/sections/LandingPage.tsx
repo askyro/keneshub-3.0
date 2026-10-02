@@ -56,7 +56,9 @@ export default function LandingPage() {
 
   useEffect(() => {
     setMounted(true);
-    setIsLoggedIn(!!localStorage.getItem('userName'));
+    fetch('/api/auth/me')
+      .then((res) => setIsLoggedIn(res.ok))
+      .catch(() => setIsLoggedIn(false));
   }, []);
 
   return (

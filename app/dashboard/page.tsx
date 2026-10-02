@@ -28,11 +28,12 @@ export default function Dashboard() {
   const [userName, setUserName] = useState('');
 
   useEffect(() => {
-    setUserName(localStorage.getItem('userName') || '');
-    
     fetch('/api/debts')
       .then(res => res.json())
-      .then(setData)
+      .then((nextData) => {
+        setData(nextData);
+        setUserName(nextData.user?.name || '');
+      })
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);

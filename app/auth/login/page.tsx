@@ -50,12 +50,6 @@ export default function LoginPage() {
         throw new Error(data.error || 'Ошибка при входе');
       }
 
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('userName', data.user?.name || 'Пользователь');
-        localStorage.setItem('userRole', roleLabels[data.user?.role] || 'Заёмщик');
-        localStorage.setItem('userEmail', data.user?.email || email);
-      }
-
       router.push(roleHome[data.user?.role] || '/dashboard');
     } catch (err) {
       console.error(err);
