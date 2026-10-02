@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { useEffect, useMemo, useState } from 'react';
 import { 
   MessageSquare, 
   ChevronRight, 
@@ -9,9 +10,24 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 
-const negotiations: any[] = [];
-
 export default function NegotiationsPage() {
+  const [negotiations, setNegotiations] = useState<any[]>([]);
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/negotiations')
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error('Не удалось загрузить диалоги')))
+      .then((data) => setNegotiations(data.negotiations ?? []))
+      .catch(() => setNegotiations([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const filteredNegotiations = useMemo(() => negotiations.filter((negotiation) => {
+    const query = search.toLowerCase();
+    return !query || negotiation.partner?.name?.toLowerCase().includes(query) || negotiation.debt?.description?.toLowerCase().includes(query);
+  }), [negotiations, search]);
+
   return (
     <div className="max-w-[1000px] mx-auto px-6 md:px-12 py-12">
       
@@ -39,13 +55,15 @@ export default function NegotiationsPage() {
             </div>
             <div className="relative w-full md:w-auto">
                <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
-               <input placeholder="Найти партнера..." className="w-full md:w-[240px] pl-9 pr-4 py-1.5 border-b border-zinc-100 outline-none focus:border-black text-sm transition-all bg-transparent" />
+               <input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Найти партнера..." className="w-full md:w-[240px] pl-9 pr-4 py-1.5 border-b border-zinc-100 outline-none focus:border-black text-sm transition-all bg-transparent" />
             </div>
          </div>
 
          <div className="space-y-4">
-            {negotiations.length > 0 ? (
-              negotiations.map((n, i) => (
+            {loading ? (
+              <div className="p-12 text-center text-zinc-400">Загрузка диалогов...</div>
+            ) : filteredNegotiations.length > 0 ? (
+              filteredNegotiations.map((n, i) => (
                 <Link key={n.id} href={`/chat/${n.id}`}>
                   <motion.div 
                     initial={{ opacity: 0, y: 10 }}
@@ -55,21 +73,21 @@ export default function NegotiationsPage() {
                   >
                     <div className="flex items-center gap-4 md:gap-8">
                        <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-zinc-50 border border-zinc-100 flex items-center justify-center font-serif text-[18px] md:text-[20px] font-bold text-black italic flex-shrink-0">
-                          {n.partner[0]}
+                          {n.partner?.name?.[0] ?? '?'}
                        </div>
                        <div className="min-w-0">
                           <div className="flex items-center gap-3 mb-1">
-                             <h3 className="font-serif text-[20px] md:text-[24px] text-black leading-tight truncate">{n.partner}</h3>
+                          <h3 className="font-serif text-[20px] md:text-[24px] text-black leading-tight truncate">{n.partner?.name ?? 'Участник дела'}</h3>
                              {n.unread && <div className="w-2 h-2 rounded-full bg-black animate-pulse flex-shrink-0" />}
                           </div>
-                          <p className="text-[11px] md:text-[13px] font-bold text-zinc-400 uppercase tracking-widest mb-2 truncate">{n.subject}</p>
-                          <p className="text-[14px] md:text-[15px] text-zinc-500 italic font-serif truncate">"{n.lastMsg}"</p>
+                          <p className="text-[11px] md:text-[13px] font-bold text-zinc-400 uppercase tracking-widest mb-2 truncate">{n.debt?.description ?? 'Дело по задолженности'}</p>
+                          <p className="text-[14px] md:text-[15px] text-zinc-500 italic font-serif truncate">"{n.lastMessage?.content ?? 'Диалог открыт'}"</p>
                        </div>
                     </div>
                     <div className="flex items-center justify-between md:justify-end gap-6 md:gap-10 border-t md:border-t-0 pt-4 md:pt-0">
                        <div className="text-left md:text-right">
-                          <p className="text-[11px] md:text-[12px] font-bold text-zinc-400 uppercase tracking-widest mb-1">{n.time}</p>
-                          <span className="text-[10px] md:text-[11px] font-bold text-black border border-black rounded-full px-2 py-0.5">{n.type}</span>
+                          <p className="text-[11px] md:text-[12px] font-bold text-zinc-400 uppercase tracking-widest mb-1">{n.lastMessage?.createdAt ? new Date(Number(n.lastMessage.createdAt) * 1000).toLocaleDateString('ru-RU') : 'Новое'}</p>
+                          <span className="text-[10px] md:text-[11px] font-bold text-black border border-black rounded-full px-2 py-0.5">{n.status === 'open' ? 'ОТКРЫТ' : n.status}</span>
                        </div>
                        <ChevronRight className="text-zinc-200 group-hover:text-black transition-colors" />
                     </div>

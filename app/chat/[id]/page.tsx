@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { useParams } from 'next/navigation';
 import { 
   Plus, 
   ArrowUp, 
@@ -14,12 +15,12 @@ import {
 import { motion } from 'framer-motion';
 
 export default function ChatPage({ params }: { params: { id: string } }) {
-  const [messages, setMessages] = useState([
-    { id: 1, role: 'assistant', text: 'Здравствуйте! Я получил ваше заявление о реструктуризации долга. Давайте обсудим условия.', time: '10:15' },
-    { id: 2, role: 'user', text: 'Добрый день. Я бы хотел снизить процентную ставку до 14%, на текущий момент у меня 21%.', time: '10:18' },
-    { id: 3, role: 'assistant', text: '14% — это достаточно резкое снижение. Банк готов рассмотреть 17% при условии пролонгации договора на 12 месяцев. Вас это устроит?', time: '10:20' },
-  ]);
+  const routeParams = useParams<{ id: string }>();
+  const negotiationId = routeParams.id || params.id;
+  const [messages, setMessages] = useState<any[]>([]);
   const [input, setInput] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -27,18 +28,36 @@ export default function ChatPage({ params }: { params: { id: string } }) {
   };
 
   useEffect(() => {
+    fetch(`/api/negotiations/${negotiationId}/messages`)
+      .then((response) => response.ok ? response.json() : Promise.reject(new Error('Не удалось загрузить сообщения')))
+      .then((data) => setMessages(data.messages ?? []))
+      .catch(() => setMessages([]))
+      .finally(() => setLoading(false));
+  }, [negotiationId]);
+
+  useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
-    setMessages([...messages, { 
-      id: Date.now(), 
-      role: 'user', 
-      text: input, 
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
-    }]);
+  const handleSend = async () => {
+    if (!input.trim() || sending) return;
+    const content = input.trim();
     setInput('');
+    setSending(true);
+    try {
+      const response = await fetch(`/api/negotiations/${negotiationId}/messages`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ content }),
+      });
+      if (!response.ok) throw new Error('Не удалось отправить сообщение');
+      const data = await response.json();
+      setMessages((current) => [...current, data.message]);
+    } catch {
+      setInput(content);
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
@@ -69,20 +88,20 @@ export default function ChatPage({ params }: { params: { id: string } }) {
 
       {/* Messaging Area */}
       <div className="flex-1 overflow-y-auto px-6 md:px-10 py-12 space-y-10">
-        {messages.map((message) => (
+        {loading ? <div className="text-center text-zinc-400">Загрузка переписки...</div> : messages.length === 0 ? <div className="text-center text-zinc-400">Сообщений пока нет. Начните диалог.</div> : messages.map((message) => (
           <motion.div 
             key={message.id}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`flex flex-col ${message.role === 'user' ? 'items-end' : 'items-start'}`}
+            className={`flex flex-col ${message.senderId ? 'items-end' : 'items-start'}`}
           >
-            <div className={`max-w-[100%] md:max-w-[520px] ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
-               <div className={`text-[15px] md:text-[16px] leading-relaxed mb-1 ${message.role === 'user' ? 'text-zinc-600 font-medium' : 'text-black font-serif italic italic'}`}>
-                  {message.text}
+            <div className="max-w-[100%] md:max-w-[520px] text-right">
+               <div className="text-[15px] md:text-[16px] leading-relaxed mb-1 text-zinc-700 font-medium">
+                  {message.content}
                </div>
                <div className="flex items-center gap-2 justify-end opacity-40">
                   <span className="text-[10px] font-bold uppercase tracking-widest">{message.time}</span>
-                  {message.role === 'user' && <CheckCheck size={12} />}
+                  <CheckCheck size={12} />
                </div>
             </div>
           </motion.div>
@@ -107,6 +126,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
                />
                <button 
                  onClick={handleSend}
+                 disabled={sending}
                  className={`w-8 h-8 md:w-9 md:h-9 flex items-center justify-center rounded-full transition-all flex-shrink-0 ${input.trim() ? 'bg-black text-white' : 'bg-zinc-50 text-zinc-300'}`}
                >
                   <ArrowUp size={20} strokeWidth={2.5} />
