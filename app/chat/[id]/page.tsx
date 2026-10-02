@@ -14,10 +14,11 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-export default function ChatPage({ params }: { params: { id: string } }) {
+export default function ChatPage() {
   const routeParams = useParams<{ id: string }>();
-  const negotiationId = routeParams.id || params.id;
+  const negotiationId = routeParams.id;
   const [messages, setMessages] = useState<any[]>([]);
+  const [currentUserId, setCurrentUserId] = useState('');
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -28,6 +29,7 @@ export default function ChatPage({ params }: { params: { id: string } }) {
   };
 
   useEffect(() => {
+    fetch('/api/auth/me').then((response) => response.ok ? response.json() : null).then((data) => setCurrentUserId(data?.user?.id ?? ''));
     fetch(`/api/negotiations/${negotiationId}/messages`)
       .then((response) => response.ok ? response.json() : Promise.reject(new Error('Не удалось загрузить сообщения')))
       .then((data) => setMessages(data.messages ?? []))
@@ -93,15 +95,15 @@ export default function ChatPage({ params }: { params: { id: string } }) {
             key={message.id}
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className={`flex flex-col ${message.senderId ? 'items-end' : 'items-start'}`}
+            className={`flex flex-col ${message.senderId === currentUserId ? 'items-end' : 'items-start'}`}
           >
-            <div className="max-w-[100%] md:max-w-[520px] text-right">
+            <div className={`max-w-[100%] md:max-w-[520px] ${message.senderId === currentUserId ? 'text-right' : 'text-left'}`}>
                <div className="text-[15px] md:text-[16px] leading-relaxed mb-1 text-zinc-700 font-medium">
                   {message.content}
                </div>
-               <div className="flex items-center gap-2 justify-end opacity-40">
-                  <span className="text-[10px] font-bold uppercase tracking-widest">{message.time}</span>
-                  <CheckCheck size={12} />
+               <div className={`flex items-center gap-2 opacity-40 ${message.senderId === currentUserId ? 'justify-end' : 'justify-start'}`}>
+                  <span className="text-[10px] font-bold uppercase tracking-widest">{message.createdAt ? new Date(Number(message.createdAt) * 1000).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' }) : ''}</span>
+                  {message.senderId === currentUserId && <CheckCheck size={12} />}
                </div>
             </div>
           </motion.div>
