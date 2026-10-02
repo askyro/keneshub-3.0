@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { readSession, SESSION_COOKIE } from '@/lib/auth/session';
-import { isAdminSession } from '@/lib/auth/request';
+import { isAdminSession } from '@/lib/auth/admin';
 
 const userProtectedRoutes = ['/dashboard', '/creditor', '/collector'];
 const authRoutes = ['/auth/login', '/auth/register'];
