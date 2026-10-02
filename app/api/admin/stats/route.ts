@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { users, debts, negotiations } from '@/lib/db/schema';
 import { sql, eq, count, sum } from 'drizzle-orm';
 import { cookies } from 'next/headers';
-import { isAdminSession } from '@/lib/auth/request';
+import { isAdminSession } from '@/lib/auth/admin';
 
 export async function GET() {
   try {
